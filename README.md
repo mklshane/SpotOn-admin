@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SpotOn Admin
 
-## Getting Started
+Internal Next.js site for managing the SpotOn directory: **facilities, doctors,
+telemedicine platforms, booking links, and doctor↔facility affiliations**. It
+talks to the FastAPI backend's `/admin/*` endpoints (`SpotOn-backend/api`),
+which require a user with `is_admin = true`.
 
-First, run the development server:
+## One-time setup
+
+1. **Run migration 010** in the Supabase SQL editor:
+   `SpotOn-backend/migrations/010_admin.sql` (adds `users.is_admin`).
+2. **Promote your account** (register one via the mobile app or `POST /auth/register` first):
+   ```sql
+   update users set is_admin = true where email = 'you@example.com';
+   ```
+3. Copy env: `cp .env.example .env.local` (defaults to `http://localhost:8000`).
+
+## Run
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+# 1. Backend (from SpotOn-backend/api, with its .env configured)
+uvicorn app.main:app --reload
+
+# 2. Admin site
+npm install
+npm run dev   # http://localhost:3000
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Log in with your (promoted) SpotOn account email/phone + password.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Notes on deletes & mobile sync
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+The mobile app mirrors the directory offline via `/sync`, which has **no delete
+tombstones** — hard-deleted rows linger on devices until a full refresh. So:
 
-## Learn More
+- **Facilities** → prefer *Exclude* (sets `status='excluded'`; propagates via
+  sync, hidden from the public API, reversible). Hard delete only for junk.
+- **Doctors** → hard delete only (no status column); the confirm dialog warns
+  about the sync caveat. Booking links + affiliations are removed with it.
+- **Platforms / booking links** → prefer *Deactivate* (`is_active=false`); the
+  public API filters inactive rows server-side.
 
-To learn more about Next.js, take a look at the following resources:
+## Stack
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Next.js (App Router) · TypeScript strict · Tailwind + shadcn/ui ·
+TanStack Query · react-hook-form + zod. Tokens live in `localStorage` with a
+mutexed refresh (the backend rotates refresh tokens). The route guard is
+client-side; real enforcement is the API's per-request `is_admin` check.
