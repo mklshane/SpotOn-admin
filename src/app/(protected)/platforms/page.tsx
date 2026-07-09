@@ -90,7 +90,7 @@ export default function PlatformsPage() {
         <p className="text-sm text-destructive">Failed to load platforms. Is the API running?</p>
       )}
 
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-[0_2px_8px_rgb(122_74_43/0.06)]">
         <Table>
           <TableHeader>
             <TableRow>

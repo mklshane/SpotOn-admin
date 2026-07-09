@@ -28,12 +28,14 @@ import { useFacilities, useMeta } from "@/lib/hooks";
 
 const LIMIT = 25;
 
+// Warm status palette from the mobile risk-tier tints (green/amber/red) plus
+// the brand tint for pending; excluded reads as muted, not alarming.
 const STATUS_STYLES: Record<string, string> = {
-  verified: "bg-green-100 text-green-800",
-  unverified: "bg-yellow-100 text-yellow-800",
-  pending: "bg-blue-100 text-blue-800",
-  rejected: "bg-red-100 text-red-800",
-  excluded: "bg-zinc-200 text-zinc-600",
+  verified: "bg-[#E7F6EF] text-[#1E7A55]",
+  unverified: "bg-[#FFF4DE] text-[#9A6A12]",
+  pending: "bg-[#FFE9DA] text-[#C2551F]",
+  rejected: "bg-[#FCE7E7] text-[#B32F33]",
+  excluded: "bg-[#F1E5DB] text-[#7C6E64]",
 };
 
 export default function FacilitiesPage() {
@@ -149,7 +151,7 @@ export default function FacilitiesPage() {
         <p className="text-sm text-destructive">Failed to load facilities. Is the API running?</p>
       )}
 
-      <div className="rounded-md border">
+      <div className="overflow-hidden rounded-2xl border bg-card shadow-[0_2px_8px_rgb(122_74_43/0.06)]">
         <Table>
           <TableHeader>
             <TableRow>
@@ -192,7 +194,15 @@ export default function FacilitiesPage() {
                   )}
                 </TableCell>
                 <TableCell className="text-muted-foreground">{f.facility_type ?? "—"}</TableCell>
-                <TableCell>{f.needs_review ? <Badge variant="destructive">review</Badge> : ""}</TableCell>
+                <TableCell>
+                  {f.needs_review ? (
+                    <Badge className="bg-[#FFF4DE] text-[#9A6A12]" variant="secondary">
+                      review
+                    </Badge>
+                  ) : (
+                    ""
+                  )}
+                </TableCell>
                 <TableCell className="text-muted-foreground">
                   {new Date(f.updated_at).toLocaleDateString()}
                 </TableCell>

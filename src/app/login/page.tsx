@@ -46,10 +46,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-1 items-center justify-center p-6">
-      <Card className="w-full max-w-sm">
+    <div className="flex min-h-screen flex-1 items-center justify-center bg-gradient-to-b from-[#FFE9D6] via-[#FFD7C0] to-[#FFC3AC] p-6">
+      <Card className="w-full max-w-sm border-none shadow-[0_12px_28px_rgb(122_74_43/0.16)]">
         <CardHeader>
-          <CardTitle>SpotOn Admin</CardTitle>
+          <div className="mb-2 size-10 rounded-xl bg-gradient-to-br from-[#FFA468] via-[#FF8A4C] to-[#F26A2E]" />
+          <CardTitle className="font-heading text-xl font-bold tracking-tight">
+            SpotOn Admin
+          </CardTitle>
           <CardDescription>
             Sign in with your SpotOn account. Admin access required.
           </CardDescription>
