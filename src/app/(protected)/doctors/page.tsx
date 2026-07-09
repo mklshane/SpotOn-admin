@@ -36,7 +36,7 @@ export default function DoctorsPage() {
   const [q, setQ] = useState("");
   const [specialty, setSpecialty] = useState("all");
   const [pdsOnly, setPdsOnly] = useState(false);
-  const [withBooking, setWithBooking] = useState(false);
+  const [booking, setBooking] = useState("all");
   const [offset, setOffset] = useState(0);
 
   useEffect(() => {
@@ -51,7 +51,7 @@ export default function DoctorsPage() {
     q: q || undefined,
     specialty: specialty === "all" ? undefined : specialty,
     pds_certified: pdsOnly ? true : undefined,
-    has_booking: withBooking ? true : undefined,
+    has_booking: booking === "all" ? undefined : booking === "with",
     sort: "updated_at",
     order: "desc",
     limit: LIMIT,
@@ -103,16 +103,22 @@ export default function DoctorsPage() {
           />
           PDS certified only
         </label>
-        <label className="flex items-center gap-2 text-sm">
-          <Checkbox
-            checked={withBooking}
-            onCheckedChange={(c) => {
-              setWithBooking(c === true);
-              setOffset(0);
-            }}
-          />
-          Has booking link
-        </label>
+        <Select
+          value={booking}
+          onValueChange={(v) => {
+            setBooking(v);
+            setOffset(0);
+          }}
+        >
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Booking" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All booking</SelectItem>
+            <SelectItem value="with">Has booking link</SelectItem>
+            <SelectItem value="without">No booking link</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {error && (
