@@ -66,6 +66,15 @@ export function useFacilityMutations() {
         api.del(`/admin/facilities/${id}`, hard ? { hard: true } : undefined),
       onSuccess: invalidate,
     }),
+    removeMany: useMutation({
+      mutationFn: async ({ ids, hard }: { ids: string[]; hard?: boolean }) => {
+        const results = await Promise.allSettled(
+          ids.map((id) => api.del(`/admin/facilities/${id}`, hard ? { hard: true } : undefined)),
+        );
+        return { done: results.filter((r) => r.status === "fulfilled").length, total: ids.length };
+      },
+      onSettled: invalidate,
+    }),
   };
 }
 
@@ -103,6 +112,13 @@ export function useDoctorMutations() {
     remove: useMutation({
       mutationFn: (id: string) => api.del(`/admin/doctors/${id}`),
       onSuccess: invalidate,
+    }),
+    removeMany: useMutation({
+      mutationFn: async (ids: string[]) => {
+        const results = await Promise.allSettled(ids.map((id) => api.del(`/admin/doctors/${id}`)));
+        return { done: results.filter((r) => r.status === "fulfilled").length, total: ids.length };
+      },
+      onSettled: invalidate,
     }),
   };
 }

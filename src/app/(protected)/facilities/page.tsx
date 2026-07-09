@@ -24,7 +24,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { useFacilities, useMeta } from "@/lib/hooks";
+import { toast } from "sonner";
+
+import { ConfirmDialog } from "@/components/confirm-dialog";
+import { useFacilities, useFacilityMutations, useMeta } from "@/lib/hooks";
 
 const LIMIT = 25;
 
@@ -49,6 +52,8 @@ export default function FacilitiesPage() {
   const [needsReview, setNeedsReview] = useState(false);
   const [booking, setBooking] = useState("all");
   const [offset, setOffset] = useState(0);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const { removeMany } = useFacilityMutations();
 
   // Debounce the search box into the query param.
   useEffect(() => {
@@ -70,6 +75,44 @@ export default function FacilitiesPage() {
     limit: LIMIT,
     offset,
   });
+
+  const pageIds = (data?.items ?? []).map((f) => f.id);
+  const allPageSelected = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+
+  const toggleRow = (id: string, on: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (on) next.add(id);
+      else next.delete(id);
+      return next;
+    });
+  };
+
+  const togglePage = (on: boolean) => {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const id of pageIds) {
+        if (on) next.add(id);
+        else next.delete(id);
+      }
+      return next;
+    });
+  };
+
+  const bulk = (hard: boolean) => {
+    const ids = [...selected];
+    removeMany.mutate(
+      { ids, hard },
+      {
+        onSuccess: ({ done, total }) => {
+          const verb = hard ? "deleted" : "excluded";
+          if (done === total) toast.success(`${done} facilit${done === 1 ? "y" : "ies"} ${verb}`);
+          else toast.warning(`${verb} ${done}/${total} — some failed, list refreshed`);
+          setSelected(new Set());
+        },
+      },
+    );
+  };
 
   return (
     <div className="grid gap-4">
@@ -157,10 +200,51 @@ export default function FacilitiesPage() {
         <p className="text-sm text-destructive">Failed to load facilities. Is the API running?</p>
       )}
 
+      {selected.size > 0 && (
+        <div className="flex items-center gap-3 rounded-full border bg-accent/60 py-2 pr-2 pl-4">
+          <span className="text-sm font-medium">{selected.size} selected</span>
+          <div className="ml-auto flex gap-2">
+            <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
+              Clear
+            </Button>
+            <ConfirmDialog
+              trigger={
+                <Button variant="outline" size="sm" disabled={removeMany.isPending}>
+                  Exclude selected
+                </Button>
+              }
+              title={`Exclude ${selected.size} facilit${selected.size === 1 ? "y" : "ies"}?`}
+              description="Sets status to 'excluded' on every selected facility. They disappear from the public directory and the change syncs to the mobile app. Reversible per facility."
+              confirmLabel="Exclude all selected"
+              onConfirm={() => bulk(false)}
+            />
+            <ConfirmDialog
+              trigger={
+                <Button variant="destructive" size="sm" disabled={removeMany.isPending}>
+                  Delete selected
+                </Button>
+              }
+              title={`Permanently delete ${selected.size} facilit${selected.size === 1 ? "y" : "ies"}?`}
+              description="Hard-deletes every selected facility and their doctor affiliations. This cannot be undone, and mobile apps keep stale copies until a full refresh. Prefer Exclude unless this is junk data."
+              confirmLabel={`Delete ${selected.size} permanently`}
+              destructive
+              onConfirm={() => bulk(true)}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="overflow-hidden rounded-2xl border bg-card shadow-[0_2px_8px_rgb(122_74_43/0.06)]">
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-10">
+                <Checkbox
+                  checked={allPageSelected}
+                  onCheckedChange={(c) => togglePage(c === true)}
+                  aria-label="Select all on this page"
+                />
+              </TableHead>
               <TableHead>Name</TableHead>
               <TableHead>City</TableHead>
               <TableHead>Status</TableHead>
@@ -172,14 +256,14 @@ export default function FacilitiesPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && data?.items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                   No facilities match.
                 </TableCell>
               </TableRow>
@@ -190,6 +274,13 @@ export default function FacilitiesPage() {
                 className="cursor-pointer"
                 onClick={() => router.push(`/facilities/${f.id}`)}
               >
+                <TableCell onClick={(e) => e.stopPropagation()}>
+                  <Checkbox
+                    checked={selected.has(f.id)}
+                    onCheckedChange={(c) => toggleRow(f.id, c === true)}
+                    aria-label={`Select ${f.name}`}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">{f.name}</TableCell>
                 <TableCell>{f.city}</TableCell>
                 <TableCell>
