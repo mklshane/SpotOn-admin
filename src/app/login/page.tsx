@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -49,7 +50,13 @@ export default function LoginPage() {
     <div className="flex min-h-screen flex-1 items-center justify-center bg-gradient-to-b from-[#FFE9D6] via-[#FFD7C0] to-[#FFC3AC] p-6">
       <Card className="w-full max-w-sm border-none shadow-[0_12px_28px_rgb(122_74_43/0.16)]">
         <CardHeader>
-          <div className="mb-2 size-10 rounded-xl bg-gradient-to-br from-[#FFA468] via-[#FF8A4C] to-[#F26A2E]" />
+          <Image
+            src="/spoton-icon.png"
+            alt="SpotOn"
+            width={48}
+            height={48}
+            className="mb-2 size-12 rounded-xl shadow-[0_2px_8px_rgb(122_74_43/0.25)]"
+          />
           <CardTitle className="font-heading text-xl font-bold tracking-tight">
             SpotOn Admin
           </CardTitle>
