@@ -45,6 +45,7 @@ export default function FacilitiesPage() {
   const [status, setStatus] = useState("all");
   const [facilityType, setFacilityType] = useState("all");
   const [needsReview, setNeedsReview] = useState(false);
+  const [withBooking, setWithBooking] = useState(false);
   const [offset, setOffset] = useState(0);
 
   // Debounce the search box into the query param.
@@ -61,6 +62,7 @@ export default function FacilitiesPage() {
     status: status === "all" ? undefined : status,
     facility_type: facilityType === "all" ? undefined : facilityType,
     needs_review: needsReview ? true : undefined,
+    has_booking: withBooking ? true : undefined,
     sort: "updated_at",
     order: "desc",
     limit: LIMIT,
@@ -130,6 +132,16 @@ export default function FacilitiesPage() {
             }}
           />
           Needs review
+        </label>
+        <label className="flex items-center gap-2 text-sm">
+          <Checkbox
+            checked={withBooking}
+            onCheckedChange={(c) => {
+              setWithBooking(c === true);
+              setOffset(0);
+            }}
+          />
+          Has booking URL
         </label>
       </div>
 
