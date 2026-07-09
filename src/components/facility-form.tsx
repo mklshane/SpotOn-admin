@@ -44,7 +44,7 @@ const jsonText = z.string().refine(
 
 const schema = z.object({
   name: z.string().min(1, "Required"),
-  type: z.string().min(1, "Required"),
+  type: z.string().min(1, "Select a type"),
   facility_type: z.string(),
   address: z.string().min(1, "Required"),
   city: z.string().min(1, "Required"),
@@ -148,6 +148,7 @@ export function FacilityForm({
     register,
     control,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -163,13 +164,25 @@ export function FacilityForm({
         <Field label="Name" htmlFor="name" error={errors.name?.message}>
           <Input id="name" {...register("name")} />
         </Field>
-        <Field label="Type (free text)" htmlFor="type" error={errors.type?.message}>
-          <Input id="type" list="facility-types" {...register("type")} />
-          <datalist id="facility-types">
-            {meta.types.map((t) => (
-              <option key={t} value={t} />
-            ))}
-          </datalist>
+        <Field label="Type" error={errors.type?.message}>
+          <Controller
+            control={control}
+            name="type"
+            render={({ field }) => (
+              <Select value={field.value || undefined} onValueChange={field.onChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {meta.types.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
         </Field>
         <Field label="Classification" error={errors.facility_type?.message}>
           <Controller
@@ -178,9 +191,13 @@ export function FacilityForm({
             render={({ field }) => (
               <Select
                 value={field.value || "none"}
-                onValueChange={(v) => field.onChange(v === "none" ? "" : v)}
+                onValueChange={(v) => {
+                  field.onChange(v === "none" ? "" : v);
+                  // Mirrors the backend rule: aesthetic clinics are auto-excluded.
+                  if (v === "aesthetic") setValue("status", "excluded");
+                }}
               >
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -201,7 +218,7 @@ export function FacilityForm({
             name="status"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -243,7 +260,7 @@ export function FacilityForm({
             name="has_philhealth"
             render={({ field }) => (
               <Select value={field.value} onValueChange={field.onChange}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
