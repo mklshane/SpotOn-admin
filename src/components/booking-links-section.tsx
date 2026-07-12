@@ -44,6 +44,8 @@ interface LinkDraft {
   is_introductory_fee: boolean;
   available_text: string;
   is_active: boolean;
+  last_verified: string; // yyyy-mm-dd
+  next_available: string; // datetime-local
 }
 
 const emptyDraft: LinkDraft = {
@@ -55,6 +57,8 @@ const emptyDraft: LinkDraft = {
   is_introductory_fee: false,
   available_text: "",
   is_active: true,
+  last_verified: "",
+  next_available: "",
 };
 
 function toDraft(link: BookingLink): LinkDraft {
@@ -68,6 +72,8 @@ function toDraft(link: BookingLink): LinkDraft {
     is_introductory_fee: link.is_introductory_fee,
     available_text: link.available_text ?? "",
     is_active: link.is_active,
+    last_verified: link.last_verified ?? "",
+    next_available: link.next_available ? link.next_available.slice(0, 16) : "",
   };
 }
 
@@ -91,6 +97,8 @@ export function BookingLinksSection({ doctor }: { doctor: Doctor }) {
       is_introductory_fee: draft.is_introductory_fee,
       available_text: draft.available_text.trim() || null,
       is_active: draft.is_active,
+      last_verified: draft.last_verified || null,
+      next_available: draft.next_available || null,
     };
     const opts = {
       onSuccess: () => {
@@ -122,6 +130,7 @@ export function BookingLinksSection({ doctor }: { doctor: Doctor }) {
                 <TableHead>URL</TableHead>
                 <TableHead>Fee</TableHead>
                 <TableHead>Rating</TableHead>
+                <TableHead>Verified</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead />
               </TableRow>
@@ -143,6 +152,12 @@ export function BookingLinksSection({ doctor }: { doctor: Doctor }) {
                   <TableCell>{link.consultation_fee != null ? `₱${link.consultation_fee}` : "—"}</TableCell>
                   <TableCell>
                     {link.rating != null ? `${link.rating} (${link.review_count ?? 0})` : "—"}
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap text-xs text-muted-foreground">
+                    {link.last_verified ?? "—"}
+                    {link.next_available && (
+                      <div>next: {new Date(link.next_available).toLocaleDateString()}</div>
+                    )}
                   </TableCell>
                   <TableCell>
                     <Badge variant={link.is_active ? "secondary" : "outline"}>
@@ -257,6 +272,22 @@ export function BookingLinksSection({ doctor }: { doctor: Doctor }) {
                   onChange={(e) => setDraft({ ...draft, available_text: e.target.value })}
                 />
               </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Last verified">
+                  <Input
+                    type="date"
+                    value={draft.last_verified}
+                    onChange={(e) => setDraft({ ...draft, last_verified: e.target.value })}
+                  />
+                </Field>
+                <Field label="Next available slot">
+                  <Input
+                    type="datetime-local"
+                    value={draft.next_available}
+                    onChange={(e) => setDraft({ ...draft, next_available: e.target.value })}
+                  />
+                </Field>
+              </div>
               <div className="flex items-center gap-4">
                 <label className="flex items-center gap-2 text-sm">
                   <Checkbox

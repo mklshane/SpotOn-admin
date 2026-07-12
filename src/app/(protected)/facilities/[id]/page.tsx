@@ -104,6 +104,14 @@ export default function FacilityDetailPage() {
           </div>
           {facility.classification_reason && <div>Reason: {facility.classification_reason}</div>}
           <div>Google place: {facility.google_place_id ?? "—"}</div>
+          {facility.department_info != null && (
+            <details>
+              <summary className="cursor-pointer">department_info (hospital derm dept)</summary>
+              <pre className="mt-2 max-h-64 overflow-auto rounded bg-muted p-2 text-xs">
+                {JSON.stringify(facility.department_info, null, 2)}
+              </pre>
+            </details>
+          )}
           {facility.enrichment_meta != null && (
             <details>
               <summary className="cursor-pointer">enrichment_meta</summary>

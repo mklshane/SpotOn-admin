@@ -24,6 +24,7 @@ const schema = z.object({
   email: z.string(),
   website: z.string(),
   google_maps_url: z.string(),
+  description: z.string(),
   notes: z.string(),
 });
 
@@ -44,6 +45,7 @@ export function toDoctorPayload(v: FormValues) {
     email: nul(v.email),
     website: nul(v.website),
     google_maps_url: nul(v.google_maps_url),
+    description: nul(v.description),
     notes: nul(v.notes),
   };
 }
@@ -78,6 +80,7 @@ export function DoctorForm({
       email: doctor?.email ?? "",
       website: doctor?.website ?? "",
       google_maps_url: doctor?.google_maps_url ?? "",
+      description: doctor?.description ?? "",
       notes: doctor?.notes ?? "",
     },
   });
@@ -138,6 +141,19 @@ export function DoctorForm({
         error={errors.specialties_display?.message}
       >
         <Input id="specialties_display" {...register("specialties_display")} />
+      </Field>
+
+      <Field
+        label="Bio (shown in the app)"
+        htmlFor="description"
+        error={errors.description?.message}
+      >
+        <Textarea
+          id="description"
+          rows={3}
+          placeholder="1–2 sentence professional bio (board certification, subspecialty, where they practice)."
+          {...register("description")}
+        />
       </Field>
 
       <Field label="Notes" htmlFor="notes" error={errors.notes?.message}>

@@ -245,6 +245,7 @@ export default function FacilitiesPage() {
                   aria-label="Select all on this page"
                 />
               </TableHead>
+              <TableHead className="w-12" />
               <TableHead>Name</TableHead>
               <TableHead>City</TableHead>
               <TableHead>Status</TableHead>
@@ -256,14 +257,14 @@ export default function FacilitiesPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && data?.items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
                   No facilities match.
                 </TableCell>
               </TableRow>
@@ -281,7 +282,27 @@ export default function FacilitiesPage() {
                     aria-label={`Select ${f.name}`}
                   />
                 </TableCell>
-                <TableCell className="font-medium">{f.name}</TableCell>
+                <TableCell>
+                  {f.photo_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={f.photo_url}
+                      alt=""
+                      loading="lazy"
+                      className="h-9 w-9 rounded-md object-cover"
+                    />
+                  ) : (
+                    <div className="h-9 w-9 rounded-md bg-muted" />
+                  )}
+                </TableCell>
+                <TableCell className="font-medium">
+                  {f.name}
+                  {f.description ? (
+                    <span className="ml-1.5 text-muted-foreground" title={f.description}>
+                      ¶
+                    </span>
+                  ) : null}
+                </TableCell>
                 <TableCell>{f.city}</TableCell>
                 <TableCell>
                   {f.status && (

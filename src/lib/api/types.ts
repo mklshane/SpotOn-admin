@@ -50,6 +50,7 @@ export interface BookingLink {
   available_text: string | null;
   is_active: boolean;
   last_verified: string | null;
+  next_available: string | null;
   platform: Platform | null;
   created_at: string;
 }
@@ -80,6 +81,7 @@ export interface Doctor {
   city: string | null;
   region: string | null;
   photo_url: string | null;
+  description: string | null;
   source: string | null;
   collected_by: string | null;
   date_collected: string | null;
@@ -129,6 +131,10 @@ export interface Facility {
   enriched_at: string | null;
   enrichment_meta: unknown;
   services: string[];
+  description: string | null;
+  photo_url: string | null;
+  photo_attribution: string | null;
+  department_info: unknown;
   created_at: string | null;
   updated_at: string;
 }

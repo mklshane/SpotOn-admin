@@ -66,6 +66,9 @@ const schema = z.object({
   services: z.array(z.string()),
   weekday_hours: jsonText,
   weekend_hours: jsonText,
+  description: z.string(),
+  photo_url: z.string(),
+  photo_attribution: z.string(),
   notes: z.string(),
 });
 
@@ -99,6 +102,9 @@ export function toPayload(v: FormValues) {
     services: v.services,
     weekday_hours: jsonOrNull(v.weekday_hours),
     weekend_hours: jsonOrNull(v.weekend_hours),
+    description: nul(v.description),
+    photo_url: nul(v.photo_url),
+    photo_attribution: nul(v.photo_attribution),
     notes: nul(v.notes),
   };
 }
@@ -129,6 +135,9 @@ function toDefaults(f?: Facility): FormValues {
     services: f?.services ?? [],
     weekday_hours: f?.weekday_hours ? JSON.stringify(f.weekday_hours, null, 2) : "",
     weekend_hours: f?.weekend_hours ? JSON.stringify(f.weekend_hours, null, 2) : "",
+    description: f?.description ?? "",
+    photo_url: f?.photo_url ?? "",
+    photo_attribution: f?.photo_attribution ?? "",
     notes: f?.notes ?? "",
   };
 }
@@ -149,11 +158,13 @@ export function FacilityForm({
     control,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: toDefaults(facility),
   });
+  const photoUrl = watch("photo_url").trim();
 
   return (
     <form
@@ -350,6 +361,45 @@ export function FacilityForm({
           />
         </Field>
       </div>
+
+      <Field
+        label="Description (shown in the app)"
+        htmlFor="description"
+        error={errors.description?.message}
+      >
+        <Textarea
+          id="description"
+          rows={3}
+          placeholder="2–3 factual sentences about the facility and its skin-cancer-relevant services."
+          {...register("description")}
+        />
+      </Field>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <Field label="Photo URL" htmlFor="photo_url" error={errors.photo_url?.message}>
+          <Input id="photo_url" {...register("photo_url")} />
+        </Field>
+        <Field
+          label="Photo attribution (must be shown with the photo)"
+          htmlFor="photo_attribution"
+          error={errors.photo_attribution?.message}
+        >
+          <Input id="photo_attribution" {...register("photo_attribution")} />
+        </Field>
+      </div>
+      {photoUrl && (
+        <figure className="max-w-sm">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={photoUrl}
+            alt="Facility photo preview"
+            className="max-h-48 rounded-md border object-cover"
+          />
+          <figcaption className="mt-1 text-xs text-muted-foreground">
+            {watch("photo_attribution").trim() || "No attribution set"}
+          </figcaption>
+        </figure>
+      )}
 
       <Field label="Notes" htmlFor="notes" error={errors.notes?.message}>
         <Textarea id="notes" rows={3} {...register("notes")} />
