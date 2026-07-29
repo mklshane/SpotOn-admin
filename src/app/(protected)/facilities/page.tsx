@@ -48,6 +48,7 @@ export default function FacilitiesPage() {
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
+  const [type, setType] = useState("all");
   const [facilityType, setFacilityType] = useState("all");
   const [needsReview, setNeedsReview] = useState(false);
   const [booking, setBooking] = useState("all");
@@ -67,6 +68,7 @@ export default function FacilitiesPage() {
   const { data, isLoading, error } = useFacilities({
     q: q || undefined,
     status: status === "all" ? undefined : status,
+    type: type === "all" ? undefined : type,
     facility_type: facilityType === "all" ? undefined : facilityType,
     needs_review: needsReview ? true : undefined,
     has_booking: booking === "all" ? undefined : booking === "with",
@@ -145,6 +147,32 @@ export default function FacilitiesPage() {
             {(meta?.facility_statuses ?? []).map((s) => (
               <SelectItem key={s} value={s}>
                 {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select
+          value={type}
+          onValueChange={(v) => {
+            setType(v);
+            setOffset(0);
+          }}
+        >
+          <SelectTrigger className="w-52">
+            <SelectValue placeholder="Type" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All types</SelectItem>
+            {(meta?.types ?? []).map((t) => (
+              <SelectItem key={t} value={t}>
+                {t}
+              </SelectItem>
+            ))}
+            {/* Retired kinds: not creatable, but still on legacy rows — needed to
+                audit that they're all excluded from the directory. */}
+            {(meta?.retired_types ?? []).map((t) => (
+              <SelectItem key={t} value={t}>
+                {t} (retired)
               </SelectItem>
             ))}
           </SelectContent>
@@ -248,6 +276,7 @@ export default function FacilitiesPage() {
               <TableHead className="w-12" />
               <TableHead>Name</TableHead>
               <TableHead>City</TableHead>
+              <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Classification</TableHead>
               <TableHead>Review</TableHead>
@@ -257,14 +286,14 @@ export default function FacilitiesPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                   Loading…
                 </TableCell>
               </TableRow>
             )}
             {!isLoading && data?.items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={8} className="py-8 text-center text-muted-foreground">
+                <TableCell colSpan={9} className="py-8 text-center text-muted-foreground">
                   No facilities match.
                 </TableCell>
               </TableRow>
@@ -304,6 +333,7 @@ export default function FacilitiesPage() {
                   ) : null}
                 </TableCell>
                 <TableCell>{f.city}</TableCell>
+                <TableCell className="text-muted-foreground">{f.type}</TableCell>
                 <TableCell>
                   {f.status && (
                     <Badge className={STATUS_STYLES[f.status] ?? ""} variant="secondary">

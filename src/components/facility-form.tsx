@@ -165,6 +165,13 @@ export function FacilityForm({
     defaultValues: toDefaults(facility),
   });
   const photoUrl = watch("photo_url").trim();
+  // meta.types offers derm-only kinds. A legacy row (e.g. pathology_lab, retired when
+  // the directory went dermatology-first) would otherwise render an empty Select and
+  // fail the "Select a type" validation on save, so keep its current value selectable.
+  const typeOptions =
+    facility?.type && !meta.types.includes(facility.type)
+      ? [facility.type, ...meta.types]
+      : meta.types;
 
   return (
     <form
@@ -185,7 +192,7 @@ export function FacilityForm({
                   <SelectValue placeholder="Select type" />
                 </SelectTrigger>
                 <SelectContent>
-                  {meta.types.map((t) => (
+                  {typeOptions.map((t) => (
                     <SelectItem key={t} value={t}>
                       {t}
                     </SelectItem>

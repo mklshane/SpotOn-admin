@@ -145,4 +145,6 @@ export interface AdminMeta {
   facility_statuses: string[];
   facility_types: string[];
   types: string[];
+  /** Kinds no longer offered (labs, cancer centers) but still on legacy rows. */
+  retired_types: string[];
 }
