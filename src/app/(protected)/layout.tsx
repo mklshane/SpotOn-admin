@@ -16,6 +16,7 @@ const NAV = [
   { href: "/facilities", label: "Facilities" },
   { href: "/doctors", label: "Doctors" },
   { href: "/platforms", label: "Platforms" },
+  { href: "/reports", label: "Reports" },
 ];
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {

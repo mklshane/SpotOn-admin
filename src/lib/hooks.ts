@@ -16,10 +16,12 @@ import type {
   AdminMeta,
   Affiliation,
   BookingLink,
+  DirectoryReport,
   Doctor,
   Facility,
   PageResp,
   Platform,
+  ReportStatus,
 } from "@/lib/api/types";
 
 export function useMeta() {
@@ -195,6 +197,28 @@ export function usePlatformMutations() {
       mutationFn: ({ id, hard }: { id: string; hard?: boolean }) =>
         api.del(`/admin/platforms/${id}`, hard ? { hard: true } : undefined),
       onSuccess: invalidate,
+    }),
+  };
+}
+
+// --- Directory reports (patients' "Report incorrect info") ---------------------------
+
+export function useReports(status: ReportStatus | "all") {
+  return useQuery({
+    queryKey: ["reports", status],
+    queryFn: () =>
+      api.get<DirectoryReport[]>("/admin/reports", status === "all" ? undefined : { status }),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useReportMutations() {
+  const qc = useQueryClient();
+  return {
+    update: useMutation({
+      mutationFn: ({ id, body }: { id: string; body: { status?: ReportStatus; admin_note?: string | null } }) =>
+        api.patch<DirectoryReport>(`/admin/reports/${id}`, body),
+      onSuccess: () => qc.invalidateQueries({ queryKey: ["reports"] }),
     }),
   };
 }

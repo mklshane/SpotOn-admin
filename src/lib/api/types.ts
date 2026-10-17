@@ -148,3 +148,21 @@ export interface AdminMeta {
   /** Kinds no longer offered (labs, cancer centers) but still on legacy rows. */
   retired_types: string[];
 }
+
+export type ReportStatus = "open" | "resolved" | "dismissed";
+
+/** A patient's "Report incorrect info" submission (API /admin/reports, migration 019). */
+export interface DirectoryReport {
+  id: string;
+  target_kind: "facility" | "doctor";
+  target_id: string;
+  target_name: string | null;
+  category: string;
+  message: string | null;
+  status: ReportStatus;
+  admin_note: string | null;
+  user_id: string | null;
+  app_version: string | null;
+  created_at: string;
+  resolved_at: string | null;
+}
