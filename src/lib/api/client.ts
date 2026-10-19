@@ -154,10 +154,41 @@ async function request<T>(
   return (await res.json()) as T;
 }
 
+/**
+ * Authenticated binary GET (research images, CSV export). Same bearer token and
+ * shared mutexed refresh as `request`; returns the body as a Blob so callers can
+ * use object URLs — the token never goes into an <img src> or link href.
+ */
+async function requestBlob(
+  path: string,
+  opts: { params?: QueryParams; _retried?: boolean } = {},
+): Promise<Blob> {
+  const headers: Record<string, string> = {};
+  const token = tokenStore.access;
+  if (token) headers.Authorization = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE_URL}${path}${queryString(opts.params)}`, {
+    method: "GET",
+    headers,
+    cache: "no-store",
+  });
+
+  if (res.status === 401 && token && !opts._retried) {
+    const newToken = await refreshAccessToken();
+    if (newToken) return requestBlob(path, { ...opts, _retried: true });
+  }
+
+  if (!res.ok) {
+    throw new ApiError(res.status, await res.text().catch(() => ""));
+  }
+  return res.blob();
+}
+
 export const api = {
   get: <T>(path: string, params?: QueryParams) => request<T>("GET", path, { params }),
   post: <T>(path: string, body?: unknown) => request<T>("POST", path, { body }),
   patch: <T>(path: string, body?: unknown) => request<T>("PATCH", path, { body }),
-  del: <T = void>(path: string, params?: QueryParams) =>
-    request<T>("DELETE", path, { params }),
+  del: <T = void>(path: string, params?: QueryParams, body?: unknown) =>
+    request<T>("DELETE", path, { params, body }),
+  blob: (path: string, params?: QueryParams) => requestBlob(path, { params }),
 };

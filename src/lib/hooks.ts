@@ -10,11 +10,13 @@ import {
   useQueryClient,
   keepPreviousData,
 } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 
 import { api, type QueryParams } from "@/lib/api/client";
 import type {
   AdminMeta,
   Affiliation,
+  AuditLogEntry,
   BookingLink,
   DirectoryReport,
   Doctor,
@@ -22,6 +24,10 @@ import type {
   PageResp,
   Platform,
   ReportStatus,
+  ResearchSampleAdmin,
+  ResearchStats,
+  ReviewLabel,
+  TotalResp,
 } from "@/lib/api/types";
 
 export function useMeta() {
@@ -221,4 +227,107 @@ export function useReportMutations() {
       onSuccess: () => qc.invalidateQueries({ queryKey: ["reports"] }),
     }),
   };
+}
+
+// --- Shared research data + audit log ----------------------------------------------
+
+export function useResearchSamples(params: QueryParams) {
+  return useQuery({
+    queryKey: ["research", "samples", params],
+    queryFn: () =>
+      api.get<TotalResp<ResearchSampleAdmin>>("/admin/research/samples", params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+export function useResearchSample(id: string | null) {
+  return useQuery({
+    queryKey: ["research", "sample", id],
+    queryFn: () => api.get<ResearchSampleAdmin>(`/admin/research/samples/${id}`),
+    enabled: !!id,
+  });
+}
+
+export function useResearchStats() {
+  return useQuery({
+    queryKey: ["research", "stats"],
+    queryFn: () => api.get<ResearchStats>("/admin/research/stats"),
+  });
+}
+
+export function useResearchMutations() {
+  const qc = useQueryClient();
+  const invalidate = () => qc.invalidateQueries({ queryKey: ["research"] });
+  return {
+    label: useMutation({
+      mutationFn: ({ id, review_label }: { id: string; review_label: ReviewLabel | null }) =>
+        api.patch<ResearchSampleAdmin>(`/admin/research/samples/${id}`, { review_label }),
+      onSuccess: invalidate,
+    }),
+    remove: useMutation({
+      mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
+        api.del(`/admin/research/samples/${id}`, undefined, reason ? { reason } : undefined),
+      onSuccess: invalidate,
+    }),
+  };
+}
+
+export function useAuditLog(params: QueryParams) {
+  return useQuery({
+    queryKey: ["audit-log", params],
+    queryFn: () => api.get<TotalResp<AuditLogEntry>>("/admin/audit-log", params),
+    placeholderData: keepPreviousData,
+  });
+}
+
+/**
+ * Fetches a research image through the API with the bearer token and exposes it
+ * as an object URL, revoked on unmount / id change. Every call is audited
+ * server-side as view_image.
+ */
+export function useResearchImage(id: string | null) {
+  const [state, setState] = useState<{ url: string | null; error: unknown; loading: boolean }>({
+    url: null,
+    error: null,
+    loading: !!id,
+  });
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    let objectUrl: string | null = null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setState({ url: null, error: null, loading: true });
+    api
+      .blob(`/admin/research/samples/${id}/image`)
+      .then((blob) => {
+        if (cancelled) return;
+        objectUrl = URL.createObjectURL(blob);
+        setState({ url: objectUrl, error: null, loading: false });
+      })
+      .catch((error: unknown) => {
+        if (!cancelled) setState({ url: null, error, loading: false });
+      });
+    return () => {
+      cancelled = true;
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [id]);
+  return state;
+}
+
+/** Downloads the (audited) research CSV export via a token-authenticated fetch. */
+export async function downloadResearchCsv(): Promise<void> {
+  const blob = await api.blob("/admin/research/export.csv");
+  const url = URL.createObjectURL(blob);
+  try {
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `spoton-research-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  } finally {
+    // Give the browser a tick to start the download before revoking.
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
 }

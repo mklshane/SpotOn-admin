@@ -166,3 +166,64 @@ export interface DirectoryReport {
   created_at: string;
   resolved_at: string | null;
 }
+
+// --- Shared research data (API /admin/research/*, /admin/audit-log) -------------------
+
+export const RESEARCH_CLASSES = ["MEL", "BCC", "SCC", "OTHER", "BENIGN"] as const;
+export type ResearchClass = (typeof RESEARCH_CLASSES)[number];
+
+export const REVIEW_LABELS = [...RESEARCH_CLASSES, "UNUSABLE"] as const;
+export type ReviewLabel = (typeof REVIEW_LABELS)[number];
+
+export const RISK_TIERS = ["low", "moderate", "high", "critical"] as const;
+export type RiskTier = (typeof RISK_TIERS)[number];
+
+export type QuestionAnswer = "yes" | "no" | "unsure";
+
+/** A consented, de-identified screening shared for research. Never carries a user id. */
+export interface ResearchSampleAdmin {
+  id: string;
+  consent_version: string;
+  body_region: string | null;
+  age_band: string | null;
+  sex: string | null;
+  fitzpatrick: number | null;
+  answers: Record<string, QuestionAnswer>;
+  probs: Record<ResearchClass, number>;
+  top_class: ResearchClass;
+  tier: RiskTier;
+  model_version: string;
+  captured_month: string;
+  review_label: ReviewLabel | null;
+  reviewed_at: string | null;
+  reviewed_by_email: string | null;
+  created_at: string;
+  image_bytes: number;
+}
+
+export interface TotalResp<T> {
+  items: T[];
+  total: number;
+}
+
+export interface ResearchStats {
+  total: number;
+  reviewed: number;
+  by_class: Partial<Record<ResearchClass, number>>;
+  /** Keys "1".."6" plus "unknown". */
+  by_fitzpatrick: Record<string, number>;
+  class_by_fitzpatrick: { top_class: ResearchClass; fitzpatrick: number | null; count: number }[];
+  agreement: { reviewed_non_unusable: number; model_matches_review: number };
+}
+
+export type AuditAction = "list" | "view_image" | "label" | "delete" | "export";
+
+export interface AuditLogEntry {
+  id: string;
+  admin_email: string | null;
+  action: AuditAction | string;
+  target: string | null;
+  detail: unknown;
+  ip: string | null;
+  created_at: string;
+}

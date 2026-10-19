@@ -6,7 +6,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -17,12 +18,57 @@ const NAV = [
   { href: "/doctors", label: "Doctors" },
   { href: "/platforms", label: "Platforms" },
   { href: "/reports", label: "Reports" },
+  { href: "/research", label: "Research data" },
+  { href: "/audit", label: "Audit log" },
 ];
+
+/** Sign out after this long with no mouse/keyboard/touch activity (research data is sensitive). */
+const IDLE_TIMEOUT_MS = 15 * 60 * 1000;
+const ACTIVITY_EVENTS = ["mousemove", "mousedown", "keydown", "wheel", "touchstart", "scroll"] as const;
+
+/** Calls onIdle once after IDLE_TIMEOUT_MS of inactivity. Wall-clock based, so it also fires after laptop sleep. */
+function useIdleLogout(enabled: boolean, onIdle: () => void) {
+  const lastActivity = useRef(0);
+  const onIdleRef = useRef(onIdle);
+  useEffect(() => {
+    onIdleRef.current = onIdle;
+  }, [onIdle]);
+
+  useEffect(() => {
+    if (!enabled) return;
+    lastActivity.current = Date.now();
+    const bump = () => {
+      lastActivity.current = Date.now();
+    };
+    for (const ev of ACTIVITY_EVENTS) window.addEventListener(ev, bump, { passive: true, capture: true });
+    let fired = false;
+    const check = () => {
+      if (!fired && Date.now() - lastActivity.current >= IDLE_TIMEOUT_MS) {
+        fired = true;
+        onIdleRef.current();
+      }
+    };
+    const timer = window.setInterval(check, 15_000);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      for (const ev of ACTIVITY_EVENTS) window.removeEventListener(ev, bump, { capture: true });
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [enabled]);
+}
 
 export default function ProtectedLayout({ children }: { children: React.ReactNode }) {
   const { user, ready, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+
+  useIdleLogout(ready && !!user, () => {
+    void logout().then(() => {
+      toast.info("Signed out after 15 minutes of inactivity.");
+      router.replace("/login");
+    });
+  });
 
   useEffect(() => {
     if (ready && !user) router.replace("/login");
@@ -45,7 +91,7 @@ export default function ProtectedLayout({ children }: { children: React.ReactNod
             <div className="font-heading text-base font-bold leading-tight tracking-tight">
               SpotOn Admin
             </div>
-            <div className="text-xs text-muted-foreground">Directory management</div>
+            <div className="text-xs text-muted-foreground">Admin</div>
           </div>
         </div>
         <nav className="grid gap-1">

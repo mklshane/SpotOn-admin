@@ -40,6 +40,36 @@ tombstones** — hard-deleted rows linger on devices until a full refresh. So:
 - **Platforms / booking links** → prefer *Deactivate* (`is_active=false`); the
   public API filters inactive rows server-side.
 
+## Admin access & research data
+
+The **Research data** page shows screenings that app users explicitly chose to
+share (de-identified: no user id, month-level date, age band). Treat every
+image as personal health information.
+
+- **Who is an admin**: promoted only by manual SQL in Supabase (migration 010,
+  `update users set is_admin = true where email = '…';`). There is no UI or
+  API to grant admin. Keep **two or fewer** admins and demote anyone who no
+  longer needs access (`set is_admin = false`).
+- **MFA** must be on for every admin's Supabase, Render and GitHub accounts —
+  each of them can reach the data or the code that guards it.
+- **Never download or copy images outside the admin site** (no screenshots, no
+  saving to disk, no sharing in chat). Images are fetched with your token and
+  shown blurred until you click to reveal; delete anything identifying (faces,
+  tattoos, documents) with *Delete (identifying/unusable)*.
+- The **CSV export** carries metadata only (no images); quasi-identifiers in
+  groups smaller than 5 are suppressed server-side. Store it only in the
+  designated research location.
+- **Audit log**: every image view, label, delete and export is recorded. An
+  admin reviews the *Audit log* page **monthly** for unexpected access.
+- **Breach**: if research data or an admin account is exposed, notify the
+  National Privacy Commission (and affected users where required) **within 72
+  hours** of discovery, per the Data Privacy Act (NPC Circular 16-03).
+- Hardening in this site: 15-minute idle auto-logout, strict
+  Content-Security-Policy + `X-Frame-Options: DENY` + `Referrer-Policy:
+  no-referrer` (see `next.config.ts`). If you change the API origin, set
+  `NEXT_PUBLIC_API_BASE_URL` before building — the CSP `connect-src` is derived
+  from it at build time.
+
 ## Stack
 
 Next.js (App Router) · TypeScript strict · Tailwind + shadcn/ui ·
