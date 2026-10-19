@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
@@ -170,6 +171,7 @@ function StatsHeader({ stats }: { stats: ResearchStats }) {
 
 /** Consented, de-identified screenings shared from the app for research. */
 export default function ResearchPage() {
+  const router = useRouter();
   const [topClass, setTopClass] = useState(ALL);
   const [tier, setTier] = useState(ALL);
   const [fitz, setFitz] = useState(ALL);
@@ -318,7 +320,12 @@ export default function ResearchPage() {
               </TableRow>
             )}
             {items.map((s) => (
-              <TableRow key={s.id}>
+              // The whole row opens the case; the date stays a real link for keyboard + new-tab use.
+              <TableRow
+                key={s.id}
+                className="cursor-pointer"
+                onClick={() => router.push(`/research/${s.id}`)}
+              >
                 <TableCell className="whitespace-nowrap">
                   <Link className="font-medium underline-offset-4 hover:underline" href={`/research/${s.id}`}>
                     {s.captured_month}
