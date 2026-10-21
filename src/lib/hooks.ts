@@ -10,7 +10,7 @@ import {
   useQueryClient,
   keepPreviousData,
 } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { api, type QueryParams } from "@/lib/api/client";
 import type {
@@ -248,11 +248,29 @@ export function useResearchSample(id: string | null) {
   });
 }
 
+/**
+ * Polled, so newly shared samples show up without a reload. Stats are aggregate counts and are not
+ * audited, unlike the sample list - so the list is NOT polled; it refetches only when the total
+ * changes (below).
+ */
 export function useResearchStats() {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["research", "stats"],
     queryFn: () => api.get<ResearchStats>("/admin/research/stats"),
+    refetchInterval: 10_000,
+    refetchOnWindowFocus: true,
   });
+  const total = query.data?.total;
+  const seen = useRef<number | undefined>(undefined);
+  useEffect(() => {
+    if (total === undefined) return;
+    if (seen.current !== undefined && seen.current !== total) {
+      qc.invalidateQueries({ queryKey: ["research", "samples"] });
+    }
+    seen.current = total;
+  }, [total, qc]);
+  return query;
 }
 
 export function useResearchMutations() {
